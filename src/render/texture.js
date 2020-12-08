@@ -38,6 +38,7 @@ class Texture {
     context: Context;
     size: [number, number];
     texture: WebGLTexture;
+    image: TextureImage;
     format: TextureFormat;
     filter: ?TextureFilter;
     wrap: ?TextureWrap;
@@ -55,6 +56,8 @@ class Texture {
         const resize = (!this.size || this.size[0] !== width || this.size[1] !== height) && !position;
         const {context} = this;
         const {gl} = context;
+
+        this.image = image;
 
         this.useMipmap = Boolean(options && options.useMipmap);
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
@@ -116,6 +119,7 @@ class Texture {
         const {gl} = this.context;
         gl.deleteTexture(this.texture);
         this.texture = (null: any);
+        this.image = (null: any);
     }
 }
 
