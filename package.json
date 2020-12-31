@@ -1,7 +1,7 @@
 {
   "name": "@sakitam-gis/mapbox-gl",
   "description": "A WebGL interactive maps library",
-  "version": "1.14.0-dev",
+  "version": "1.20.0",
   "main": "dist/mapbox-gl.js",
   "style": "dist/mapbox-gl.css",
   "license": "SEE LICENSE IN LICENSE.txt",
