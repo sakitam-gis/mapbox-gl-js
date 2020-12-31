@@ -400,6 +400,7 @@ class Map extends Camera {
         this._mapId = uniqueId();
         this._locale = extend({}, defaultLocale, options.locale);
         this._clickTolerance = options.clickTolerance;
+        this._contextType = options.contextType || 'webgl';
 
         this._requestManager = new RequestManager(options.transformRequest, options.accessToken);
 
@@ -2340,8 +2341,8 @@ class Map extends Camera {
             antialias: this._antialias || false
         });
 
-        const gl = this._canvas.getContext('webgl', attributes) ||
-            this._canvas.getContext('experimental-webgl', attributes);
+        const gl = this._canvas.getContext(this._contextType, attributes) ||
+            this._canvas.getContext('experimental-' + this._contextType, attributes);
 
         if (!gl) {
             this.fire(new ErrorEvent(new Error('Failed to initialize WebGL')));
