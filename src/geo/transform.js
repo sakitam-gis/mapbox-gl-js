@@ -10,6 +10,8 @@ import EXTENT from '../data/extent';
 import {vec4, mat4, mat2, vec2} from 'gl-matrix';
 import {Aabb, Frustum} from '../util/primitives.js';
 import EdgeInsets from './edge_insets';
+// eslint-disable-next-line import/named
+import {Camera} from './camera';
 
 import {UnwrappedTileID, OverscaledTileID, CanonicalTileID} from '../source/tile_id';
 import type {PaddingOptions} from './edge_insets';
@@ -78,6 +80,7 @@ class Transform {
         this._pitch = 0;
         this._unmodified = true;
         this._edgeInsets = new EdgeInsets();
+        this._camera = new Camera();
         this._posMatrixCache = {};
         this._alignedPosMatrixCache = {};
     }
@@ -140,6 +143,11 @@ class Transform {
 
     get worldSize(): number {
         return this.tileSize * this.scale;
+    }
+
+    get cameraWorldSize(): number {
+        const distance = Math.max(this._camera.getDistanceToElevation(this._averageElevation), Number.EPSILON);
+        return this._worldSizeFromZoom(this._zoomFromMercatorZ(distance));
     }
 
     get centerOffset(): Point {
@@ -230,6 +238,14 @@ class Transform {
         return this._edgeInsets.getCenter(this.width, this.height);
     }
 
+    get pixelsPerMeter(): number {
+        return mercatorZfromAltitude(1, this.center.lat) * this.worldSize;
+    }
+
+    get cameraPixelsPerMeter(): number {
+        return mercatorZfromAltitude(1, this.center.lat) * this.cameraWorldSize;
+    }
+
     /**
      * Returns if the padding params match
      *
@@ -242,12 +258,12 @@ class Transform {
     }
 
     /**
-     * Helper method to upadte edge-insets inplace
-     *
-     * @param {PaddingOptions} target
-     * @param {number} t
-     * @memberof Transform
-     */
+ * Helper method to upadte edge-insets inplace
+ * @param {PaddingOptions} target
+ * @param start
+ * @param {number} t
+ * @memberof Transform
+ */
     interpolatePadding(start: PaddingOptions, target: PaddingOptions, t: number) {
         this._unmodified = false;
         this._edgeInsets.interpolate(start, target, t);
@@ -681,6 +697,9 @@ class Transform {
         const halfFov = this._fov / 2;
         const offset = this.centerOffset;
         this.cameraToCenterDistance = 0.5 / Math.tan(halfFov) * this.height;
+        const pixelsPerMeter = this.pixelsPerMeter;
+
+        this._updateCameraState();
 
         // Find the distance from the center point [width/2 + offset.x, height/2 + offset.y] to the
         // center top point [width/2 + offset.x, 0] in Z units, using the law of sines.
@@ -706,29 +725,34 @@ class Transform {
         // seems to solve z-fighting issues in deckgl while not clipping buildings too close to the camera.
         const nearZ = this.height / 50;
 
-        // matrix for conversion from location to GL coordinates (-1 .. 1)
-        let m = new Float64Array(16);
-        mat4.perspective(m, this._fov, this.width / this.height, nearZ, farZ);
+        const worldToCamera = this._camera.getWorldToCamera(this.worldSize, pixelsPerMeter);
+        const cameraToClip = this._camera.getCameraToClipPerspective(this._fov, this.width / this.height, nearZ, farZ);
 
-        //Apply center of perspective offset
-        m[8] = -offset.x * 2 / this.width;
-        m[9] = offset.y * 2 / this.height;
+        // Apply center of perspective offset
+        cameraToClip[8] = -offset.x * 2 / this.width;
+        cameraToClip[9] = offset.y * 2 / this.height;
 
-        mat4.scale(m, m, [1, -1, 1]);
-        mat4.translate(m, m, [0, 0, -this.cameraToCenterDistance]);
-        mat4.rotateX(m, m, this._pitch);
-        mat4.rotateZ(m, m, this.angle);
-        mat4.translate(m, m, [-x, -y, 0]);
+        let m = mat4.mul([], cameraToClip, worldToCamera);
 
         // The mercatorMatrix can be used to transform points from mercator coordinates
         // ([0, 0] nw, [1, 1] se) to GL coordinates.
-        this.mercatorMatrix = mat4.scale([], m, [this.worldSize, this.worldSize, this.worldSize]);
-
-        // scale vertically to meters per pixel (inverse of ground resolution):
-        mat4.scale(m, m, [1, 1, mercatorZfromAltitude(1, this.center.lat) * this.worldSize, 1]);
+        this.mercatorMatrix = mat4.scale([], m, [this.worldSize, this.worldSize, this.worldSize / pixelsPerMeter]);
 
         this.projMatrix = m;
+
+        // For tile cover calculation, use inverted of base (non elevated) matrix
+        // as tile elevations are in tile coordinates and relative to center elevation.
         this.invProjMatrix = mat4.invert([], this.projMatrix);
+
+        const view = new Float32Array(16);
+        mat4.identity(view);
+        mat4.scale(view, view, [1, -1, 1]);
+        mat4.rotateX(view, view, this._pitch);
+        mat4.rotateZ(view, view, this.angle);
+
+        this.view = view;
+
+        this.projection = mat4.perspective(new Float32Array(16), this._fov, this.width / this.height, nearZ, farZ);
 
         // Make a second projection matrix that is aligned to a pixel grid for rendering raster tiles.
         // We're rounding the (floating point) x/y values to achieve to avoid rendering raster images to fractional
@@ -775,6 +799,43 @@ class Transform {
         const p = [coord.x * this.worldSize, coord.y * this.worldSize, 0, 1];
         const topPoint = vec4.transformMat4(p, p, this.pixelMatrix);
         return topPoint[3] / this.cameraToCenterDistance;
+    }
+
+    _updateCameraState() {
+        if (!this.height) return;
+
+        // Set camera orientation and move it to a proper distance from the map
+        this._camera.setPitchBearing(this._pitch, this.angle);
+
+        const dir = this._camera.forward();
+        const distance = this.cameraToCenterDistance;
+        const center = this.point;
+
+        // Use camera zoom (if terrain is enabled) to maintain constant altitude to sea level
+        const zoom = this._zoom;
+        const altitude = this._mercatorZfromZoom(zoom);
+        const height = altitude - mercatorZfromAltitude(0, this.center.lat);
+
+        // simplified version of: this._worldSizeFromZoom(this._zoomFromMercatorZ(height))
+        const updatedWorldSize = this.cameraToCenterDistance / height;
+
+        this._camera.position = [
+            center.x / this.worldSize - (dir[0] * distance) / updatedWorldSize,
+            center.y / this.worldSize - (dir[1] * distance) / updatedWorldSize,
+            mercatorZfromAltitude(0, this._center.lat) + (-dir[2] * distance) / updatedWorldSize
+        ];
+    }
+
+    _mercatorZfromZoom(zoom: number): number {
+        return this.cameraToCenterDistance / this._worldSizeFromZoom(zoom);
+    }
+
+    _worldSizeFromZoom(zoom: number): number {
+        return Math.pow(2.0, zoom) * this.tileSize;
+    }
+
+    _zoomFromMercatorZ(z: number): number {
+        return this.scaleZoom(this.cameraToCenterDistance / (z * this.tileSize));
     }
 
     /*
