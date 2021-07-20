@@ -21,6 +21,7 @@ import type {
     ImageSourceSpecification,
     VideoSourceSpecification
 } from '../style-spec/types';
+import browser from '../util/browser';
 
 type Coordinates = [[number, number], [number, number], [number, number], [number, number]];
 
@@ -138,6 +139,7 @@ class ImageSource extends Evented implements Source {
      * set the `raster-fade-duration` paint property on the raster layer to 0.
      *
      * @param {Object} options Options object.
+     * @param successCallback
      * @param {string} [options.url] Required image URL.
      * @param {Array<Array<number>>} [options.coordinates] Four geographical coordinates,
      *   represented as arrays of longitude and latitude numbers, which define the corners of the image.
@@ -145,12 +147,29 @@ class ImageSource extends Evented implements Source {
      *   They do not have to represent a rectangle.
      * @returns {ImageSource} this
      */
-    updateImage(options: {url: string, coordinates?: Coordinates}) {
+    updateImage(options: {url: string, coordinates?: Coordinates}, successCallback?: () => void) {
         if (!this.image || !options.url) {
+            if (successCallback) {
+                successCallback(this);
+            }
             return this;
         }
         this.options.url = options.url;
-        this.load(options.coordinates, () => { this.texture = null; });
+        this.load(options.coordinates, () => {
+            this.texture = null;
+
+            if (this.timeUpdate) {
+                this.lastTimeUpdate = this.timeUpdate;
+            } else {
+                this.lastTimeUpdate = this.timeAdded;
+            }
+
+            this.timeUpdate = browser.now();
+
+            if (successCallback) {
+                successCallback(this);
+            }
+        });
         return this;
     }
 
@@ -163,7 +182,9 @@ class ImageSource extends Evented implements Source {
 
     onAdd(map: Map) {
         this.map = map;
-        this.load();
+        this.load(null, () => {
+            this.timeAdded = browser.now();
+        });
     }
 
     /**
@@ -239,6 +260,12 @@ class ImageSource extends Evented implements Source {
             if (tile.state !== 'loaded') {
                 tile.state = 'loaded';
                 tile.texture = this.texture;
+                if (tile.timeUpdate) {
+                    tile.lastTimeUpdate = tile.timeUpdate;
+                } else {
+                    tile.lastTimeUpdate = tile.timeAdded;
+                }
+                tile.timeUpdate = browser.now();
             }
         }
     }

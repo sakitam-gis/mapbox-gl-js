@@ -63,6 +63,8 @@ class Tile {
     expiredRequestCount: number;
     state: TileState;
     timeAdded: any;
+    timeUpdate: any;
+    lastTimeUpdate: any;
     fadeEndTime: any;
     collisionBoxArray: ?CollisionBoxArray;
     redoWhenDone: boolean;
