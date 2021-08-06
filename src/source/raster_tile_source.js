@@ -61,14 +61,17 @@ class RasterTileSource extends Evented implements Source {
         extend(this, pick(options, ['url', 'scheme', 'tileSize']));
     }
 
-    load() {
+    load(cb: Function) {
         this._loaded = false;
         this.fire(new Event('dataloading', {dataType: 'source'}));
         this._tileJSONRequest = loadTileJSON(this._options, this.map._requestManager, (err, tileJSON) => {
             this._tileJSONRequest = null;
             this._loaded = true;
             if (err) {
-                this.fire(new ErrorEvent(err));
+                const e = new ErrorEvent(err);
+                // eslint-disable-next-line no-unused-expressions
+                cb && cb(e);
+                this.fire(e);
             } else if (tileJSON) {
                 extend(this, tileJSON);
                 if (tileJSON.bounds) this.tileBounds = new TileBounds(tileJSON.bounds, this.minzoom, this.maxzoom);
@@ -76,6 +79,8 @@ class RasterTileSource extends Evented implements Source {
                 postTurnstileEvent(tileJSON.tiles);
                 postMapLoadEvent(tileJSON.tiles, this.map._getMapId(), this.map._requestManager._skuToken);
 
+                // eslint-disable-next-line no-unused-expressions
+                cb && cb();
                 // `content` is included here to prevent a race condition where `Style#_updateSources` is called
                 // before the TileJSON arrives. this makes sure the tiles needed are loaded once TileJSON arrives
                 // ref: https://github.com/mapbox/mapbox-gl-js/pull/4347#discussion_r104418088
@@ -94,23 +99,22 @@ class RasterTileSource extends Evented implements Source {
             this._tileJSONRequest.cancel();
         }
 
-        callback();
-
         const sourceCache = this.map.style.sourceCaches[this.id];
         sourceCache.clearTiles();
-        this.load();
+        this.load(callback);
     }
 
     /**
      * Sets the source `tiles` property and re-renders the map.
      *
      * @param {string[]} tiles An array of one or more tile source URLs, as in the TileJSON spec.
+     * @param {function} cb An array of one or more tile source URLs, as in the TileJSON spec.
      * @returns {RasterTileSource} this
      */
-    setTiles(tiles: Array<string>) {
-        this.setSourceProperty(() => {
-            this._options.tiles = tiles;
-        });
+    // eslint-disable-next-line no-void
+    setTiles(tiles: Array<string>, cb: Function = (() => void 0)) {
+        this._options.tiles = tiles;
+        this.setSourceProperty(cb);
 
         return this;
     }
