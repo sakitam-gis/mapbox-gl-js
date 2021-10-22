@@ -114,7 +114,7 @@ export type StyleSetterOptions = {
 };
 
 // Symbols are draped only for specific cases: see isLayerDraped
-const drapedLayers = {'fill': true, 'line': true, 'background': true, "hillshade": true, "raster": true};
+const drapedLayers = {'custom': true, 'fill': true, 'line': true, 'background': true, "hillshade": true, "raster": true};
 
 /**
  * @private

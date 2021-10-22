@@ -116,42 +116,8 @@ precision mediump float;
 
 #endif`;
 
-export default {
-    background: compile(backgroundFrag, backgroundVert),
-    backgroundPattern: compile(backgroundPatternFrag, backgroundPatternVert),
-    circle: compile(circleFrag, circleVert),
-    clippingMask: compile(clippingMaskFrag, clippingMaskVert),
-    heatmap: compile(heatmapFrag, heatmapVert),
-    heatmapTexture: compile(heatmapTextureFrag, heatmapTextureVert),
-    collisionBox: compile(collisionBoxFrag, collisionBoxVert),
-    collisionCircle: compile(collisionCircleFrag, collisionCircleVert),
-    debug: compile(debugFrag, debugVert),
-    fill: compile(fillFrag, fillVert),
-    fillOutline: compile(fillOutlineFrag, fillOutlineVert),
-    fillOutlinePattern: compile(fillOutlinePatternFrag, fillOutlinePatternVert),
-    fillPattern: compile(fillPatternFrag, fillPatternVert),
-    fillExtrusion: compile(fillExtrusionFrag, fillExtrusionVert),
-    fillExtrusionPattern: compile(fillExtrusionPatternFrag, fillExtrusionPatternVert),
-    hillshadePrepare: compile(hillshadePrepareFrag, hillshadePrepareVert),
-    hillshade: compile(hillshadeFrag, hillshadeVert),
-    line: compile(lineFrag, lineVert),
-    linePattern: compile(linePatternFrag, linePatternVert),
-    raster: compile(rasterFrag, rasterVert),
-    symbolIcon: compile(symbolIconFrag, symbolIconVert),
-    symbolSDF: compile(symbolSDFFrag, symbolSDFVert),
-    symbolTextAndIcon: compile(symbolTextAndIconFrag, symbolTextAndIconVert),
-    terrainRaster: compile(terrainRasterFrag, terrainRasterVert),
-    terrainDepth: compile(terrainDepthFrag, terrainDepthVert),
-    skybox: compile(skyboxFrag, skyboxVert),
-    skyboxGradient: compile(skyboxGradientFrag, skyboxVert),
-    skyboxCapture: compile(skyboxCaptureFrag, skyboxCaptureVert),
-    globeRaster: compile(globeFrag, globeVert),
-    globeAtmosphere: compile(atmosphereFrag, atmosphereVert),
-    globeDepth: compile(globeDepthFrag, globeDepthVert)
-};
-
 // Expand #pragmas to #ifdefs.
-function compile(fragmentSource, vertexSource, isGlobalPrelude) {
+export function compile(fragmentSource, vertexSource, isGlobalPrelude) {
     const pragmaRegex = /#pragma mapbox: ([\w]+) ([\w]+) ([\w]+) ([\w]+)/g;
     const uniformRegex = /uniform (highp |mediump |lowp )?([\w]+) ([\w]+)([\s]*)([\w]*)/g;
     const attributeRegex = /attribute (highp |mediump |lowp )?([\w]+) ([\w]+)/g;
@@ -267,3 +233,37 @@ uniform ${precision} ${type} u_${name};
 
     return {fragmentSource, vertexSource, staticAttributes, staticUniforms};
 }
+
+export default {
+    background: compile(backgroundFrag, backgroundVert),
+    backgroundPattern: compile(backgroundPatternFrag, backgroundPatternVert),
+    circle: compile(circleFrag, circleVert),
+    clippingMask: compile(clippingMaskFrag, clippingMaskVert),
+    heatmap: compile(heatmapFrag, heatmapVert),
+    heatmapTexture: compile(heatmapTextureFrag, heatmapTextureVert),
+    collisionBox: compile(collisionBoxFrag, collisionBoxVert),
+    collisionCircle: compile(collisionCircleFrag, collisionCircleVert),
+    debug: compile(debugFrag, debugVert),
+    fill: compile(fillFrag, fillVert),
+    fillOutline: compile(fillOutlineFrag, fillOutlineVert),
+    fillOutlinePattern: compile(fillOutlinePatternFrag, fillOutlinePatternVert),
+    fillPattern: compile(fillPatternFrag, fillPatternVert),
+    fillExtrusion: compile(fillExtrusionFrag, fillExtrusionVert),
+    fillExtrusionPattern: compile(fillExtrusionPatternFrag, fillExtrusionPatternVert),
+    hillshadePrepare: compile(hillshadePrepareFrag, hillshadePrepareVert),
+    hillshade: compile(hillshadeFrag, hillshadeVert),
+    line: compile(lineFrag, lineVert),
+    linePattern: compile(linePatternFrag, linePatternVert),
+    raster: compile(rasterFrag, rasterVert),
+    symbolIcon: compile(symbolIconFrag, symbolIconVert),
+    symbolSDF: compile(symbolSDFFrag, symbolSDFVert),
+    symbolTextAndIcon: compile(symbolTextAndIconFrag, symbolTextAndIconVert),
+    terrainRaster: compile(terrainRasterFrag, terrainRasterVert),
+    terrainDepth: compile(terrainDepthFrag, terrainDepthVert),
+    skybox: compile(skyboxFrag, skyboxVert),
+    skyboxGradient: compile(skyboxGradientFrag, skyboxVert),
+    skyboxCapture: compile(skyboxCaptureFrag, skyboxCaptureVert),
+    globeRaster: compile(globeFrag, globeVert),
+    globeAtmosphere: compile(atmosphereFrag, atmosphereVert),
+    globeDepth: compile(globeDepthFrag, globeDepthVert)
+};

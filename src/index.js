@@ -28,6 +28,35 @@ import {clearTileCache} from './util/tile_request_cache.js';
 import {WorkerPerformanceUtils} from './util/worker_performance_utils.js';
 import {PerformanceUtils} from './util/performance.js';
 import {FreeCameraOptions} from './ui/free_camera.js';
+
+import Program from './render/program.js';
+import Texture from './render/texture.js';
+import ColorMode from './gl/color_mode.js';
+import CullFaceMode from './gl/cull_face_mode.js';
+import DepthMode from './gl/depth_mode.js';
+import StencilMode from './gl/stencil_mode.js';
+import IndexBuffer from './gl/index_buffer.js';
+import VertexBuffer from './gl/vertex_buffer.js';
+import VertexArrayObject from './render/vertex_array_object.js';
+import SegmentVector from './data/segment.js';
+
+import Color from './style-spec/util/color.js';
+import {Struct, StructArray, viewTypes, createLayout} from './util/struct_array.js';
+import {compile} from './shaders/shaders.js';
+import {fogUniforms} from './render/fog.js';
+import {terrainUniforms} from './terrain/terrain.js';
+import {
+    Uniform,
+    Uniform1i,
+    Uniform1f,
+    Uniform2f,
+    Uniform3f,
+    Uniform4f,
+    UniformMatrix3f,
+    UniformMatrix4f,
+    UniformColor,
+} from './render/uniform_binding.js';
+
 import browser from './util/browser.js';
 
 const exported = {
@@ -51,6 +80,39 @@ const exported = {
     FreeCameraOptions,
     Evented,
     config,
+
+    /* custom export: start */
+    Program,
+    Texture,
+    ColorMode,
+    CullFaceMode,
+    DepthMode,
+    StencilMode,
+    IndexBuffer,
+    VertexBuffer,
+    VertexArrayObject,
+    SegmentVector,
+
+    Color,
+    StructArray,
+    Struct,
+    viewTypes,
+    compile,
+    createLayout,
+    fogUniforms,
+    terrainUniforms,
+
+    Uniform1i,
+    Uniform1f,
+    Uniform2f,
+    Uniform4f,
+    UniformMatrix4f,
+    Uniform,
+    UniformColor,
+    UniformMatrix3f,
+    Uniform3f,
+
+    /* custom export: end */
     /**
      * Initializes resources like WebWorkers that can be shared across maps to lower load
      * times in some situations. `mapboxgl.workerUrl` and `mapboxgl.workerCount`, if being
