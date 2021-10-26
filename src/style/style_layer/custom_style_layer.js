@@ -152,6 +152,7 @@ export type CustomLayerInterface = {
     type: "custom",
     renderingMode: "2d" | "3d",
     render: CustomRenderMethod,
+    isLayerDraped?: boolean,
     prerender: ?CustomRenderMethod,
     onAdd: ?(map: Map, gl: WebGLRenderingContext) => void,
     onRemove: ?(map: Map, gl: WebGLRenderingContext) => void
@@ -191,6 +192,10 @@ class CustomStyleLayer extends StyleLayer {
     constructor(implementation: CustomLayerInterface) {
         super(implementation, {});
         this.implementation = implementation;
+    }
+
+    isLayerDraped() {
+        return Boolean(this.implementation.isLayerDraped);
     }
 
     is3D() {

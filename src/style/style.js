@@ -114,7 +114,7 @@ export type StyleSetterOptions = {
 };
 
 // Symbols are draped only for specific cases: see isLayerDraped
-const drapedLayers = {'custom': true, 'fill': true, 'line': true, 'background': true, "hillshade": true, "raster": true};
+const drapedLayers = {'fill': true, 'line': true, 'background': true, "hillshade": true, "raster": true};
 
 /**
  * @private
@@ -461,6 +461,9 @@ class Style extends Evented {
 
     isLayerDraped(layer: StyleLayer): boolean {
         if (!this.terrain) return false;
+        if (layer.type === 'custom') {
+            return layer.isLayerDraped();
+        }
         return drapedLayers[layer.type];
     }
 

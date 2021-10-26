@@ -8,8 +8,9 @@ import StencilMode from '../gl/stencil_mode.js';
 import type Painter from './painter.js';
 import type SourceCache from '../source/source_cache.js';
 import type CustomStyleLayer from '../style/style_layer/custom_style_layer.js';
+import type {OverscaledTileID} from '../source/tile_id.js';
 
-function drawCustom(painter: Painter, sourceCache: SourceCache, layer: CustomStyleLayer) {
+function drawCustom(painter: Painter, sourceCache: SourceCache, layer: CustomStyleLayer, tileIDs: Array<OverscaledTileID>, variableOffsets: any, isInitialLoad: boolean) {
 
     const context = painter.context;
     const implementation = layer.implementation;
@@ -21,7 +22,7 @@ function drawCustom(painter: Painter, sourceCache: SourceCache, layer: CustomSty
             painter.setCustomLayerDefaults();
             context.setColorMode(painter.colorModeForRenderPass());
 
-            prerender.call(implementation, context.gl, painter.transform.customLayerMatrix());
+            prerender.call(implementation, context.gl, painter.transform.customLayerMatrix(), painter, sourceCache, layer, tileIDs, variableOffsets, isInitialLoad);
 
             context.setDirty();
             painter.setBaseState();
@@ -40,7 +41,7 @@ function drawCustom(painter: Painter, sourceCache: SourceCache, layer: CustomSty
 
         context.setDepthMode(depthMode);
 
-        implementation.render(context.gl, painter.transform.customLayerMatrix());
+        implementation.render(context.gl, painter.transform.customLayerMatrix(), painter, sourceCache, layer, tileIDs, variableOffsets, isInitialLoad);
 
         context.setDirty();
         painter.setBaseState();

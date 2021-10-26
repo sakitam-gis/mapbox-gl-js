@@ -42,6 +42,9 @@ import SegmentVector from './data/segment.js';
 
 import Color from './style-spec/util/color.js';
 import {Struct, StructArray, viewTypes, createLayout} from './util/struct_array.js';
+
+import boundsAttributes from './data/bounds_attributes.js';
+
 import {compile} from './shaders/shaders.js';
 import {fogUniforms} from './render/fog.js';
 import {terrainUniforms} from './terrain/terrain.js';
@@ -56,6 +59,8 @@ import {
     UniformMatrix4f,
     UniformColor,
 } from './render/uniform_binding.js';
+import * as arrayTypes from './data/array_types.js';
+import tileTransform from './geo/projection/tile_transform.js';
 
 import browser from './util/browser.js';
 
@@ -111,6 +116,11 @@ const exported = {
     UniformColor,
     UniformMatrix3f,
     Uniform3f,
+
+    boundsAttributes,
+
+    arrayTypes,
+    tileTransform,
 
     /* custom export: end */
     /**
